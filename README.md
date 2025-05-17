@@ -1,61 +1,163 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Enrollment Service
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This service provides API endpoints for managing student enrollments in courses. It validates the existence of students and courses by communicating with the User Service and Course Service respectively.
 
-## About Laravel
+## Technology Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+* **Backend Framework:** Laravel
+* **Database:** MySQL
+* **HTTP Client:** Guzzle HTTP Client (for inter-service communication)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Database Configuration
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+* **Database Name:** `enrollment_service_db`
+* Ensure that your MySQL server is running and you have configured the database connection details in your Laravel `.env` file.
 
-## Learning Laravel
+## API Endpoints
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 1. Enroll Student in a Course
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+* **Endpoint:** `POST /api/enrollments`
+* **Description:** Enrolls a student in a specific course. It validates if the provided `student_id` exists in the User Service and if the `course_id` exists in the Course Service.
+* **Request Body (JSON):**
+    ```json
+    {
+        "student_id": 1,
+        "course_id": 1
+    }
+    ```
+    * `student_id`: (integer, required) The ID of the student to enroll.
+    * `course_id`: (integer, required) The ID of the course to enroll the student in.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+* **Validation:**
+    * The `student_id` must exist in the User Service and the corresponding user must have the role `student`.
+    * The `course_id` must exist in the Course Service.
 
-## Laravel Sponsors
+* **Inter-service Communication:**
+    * **User Service:** Makes a `GET` request to `http://localhost:8001/api/users` (adjust port if needed) to check if the student exists and has the 'student' role.
+    * **Course Service:** Makes a `GET` request to `http://localhost:8002/api/courses/{course_id}` (adjust port if needed) to check if the course exists.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+* **Response (JSON - Success - Enrollment Created):**
+    ```json
+    {
+        "id": 1,
+        "student_id": 123,
+        "course_id": 456,
+        "created_at": "2025-05-18T06:45:00.000000Z",
+        "updated_at": "2025-05-18T06:45:00.000000Z"
+    }
+    ```
 
-### Premium Partners
+* **Response (JSON - Error - Student Not Found):**
+    ```json
+    {
+        "error": "Student not found"
+    }, 404
+    ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+* **Response (JSON - Error - Course Not Found):**
+    ```json
+    {
+        "error": "Course not found"
+    }, 404
+    ```
 
-## Contributing
+### 2. List Enrollments
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+* **Endpoint:** `GET /api/enrollments`
+* **Description:** Retrieves a list of all enrollments.
+* **Request Parameters:** None
+* **Response (JSON - Success):**
+    ```json
+    [
+        {
+            "id": 1,
+            "student_id": 123,
+            "course_id": 456,
+            "created_at": "2025-05-18T06:45:00.000000Z",
+            "updated_at": "2025-05-18T06:45:00.000000Z"
+        },
+        {
+            "id": 2,
+            "student_id": 789,
+            "course_id": 101,
+            "created_at": "2025-05-18T06:46:00.000000Z",
+            "updated_at": "2025-05-18T06:46:00.000000Z"
+        }
+        // ... more enrollments
+    ]
+    ```
 
-## Code of Conduct
+## Setup Instructions
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1.  **Ensure User Service and Course Service are running:** This service depends on the User Service running on `http://localhost:8001` and the Course Service running on `http://localhost:8002` (or their respective configured ports).
 
-## Security Vulnerabilities
+2.  **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd <repository-name>
+    ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+3.  **Install Composer dependencies:**
+    ```bash
+    composer install
+    ```
 
-## License
+4.  **Copy the `.env.example` file to `.env` and configure your database connection details:**
+    ```bash
+    cp .env.example .env
+    ```
+    Edit the `.env` file with your MySQL database credentials:
+    ```
+    `DB_CONNECTION=mysql
+ DB_HOST=127.0.0.1
+ DB_PORT=3306
+ DB_DATABASE=course_service_db
+ DB_USERNAME=root
+ DB_PASSWORD=hrhk
+    ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+5.  **Generate the application key:**
+    ```bash
+    php artisan key:generate
+    ```
+
+6.  **Run database migrations:**
+    ```bash
+    php artisan migrate
+    ```
+
+7.  **Start the Laravel development server:**
+    ```bash
+    php artisan serve --port=8003
+    ```
+    The API will be accessible at `http://127.0.0.1:8003/api`.
+
+## Usage
+
+You can use tools like Postman, Insomnia, or `curl` to interact with the API endpoints.
+
+**Example using `curl`:**
+
+* **Enroll a student in a course:**
+    ```bash
+    curl -X POST -H "Content-Type: application/json" -d '{"student_id": 3, "course_id": 1}' [http://127.0.0.1:8003/api/enrollments](http://127.0.0.1:8003/api/enrollments)
+    ```
+    *(Ensure that student with ID 3 exists in the User Service and course with ID 1 exists in the Course Service)*
+
+* **List all enrollments:**
+    ```bash
+    curl [http://127.0.0.1:8003/api/enrollments](http://127.0.0.1:8003/api/enrollments)
+    ```
+
+## Further Development
+
+Potential future enhancements could include:
+
+* **Retrieving enrollments by student or course:** Implementing `GET` requests with query parameters (e.g., `/api/enrollments?student_id=123`).
+* **Deleting enrollments:** Implementing a `DELETE /api/enrollments/{id}` endpoint.
+* **Getting details of an enrollment by ID:** Implementing a `GET /api/enrollments/{id}` endpoint.
+* **Handling enrollment limits or prerequisites:** Adding more complex enrollment rules.
+* **Asynchronous communication with other services:** Using queues for better performance and resilience.
+* **Error handling for inter-service communication:** Implementing retries or circuit breaker patterns.
+* **Unit and integration tests:** Ensuring the reliability of the service, including testing the interaction with the User and Course services (mocking external requests).
